@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Vendas</title>
+    <style>
+        /* Reset básico */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #000; /* Fundo preto */
+            color: #fff; /* Texto branco */
+            line-height: 1.6;
+        }
+
+        /* Logotipo */
+        .logo {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .logo img {
+            max-width: 300px; /* Tamanho do logotipo */
+            height: auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2em;
+            margin: 10px 0;
+            color: #fff; /* Título branco */
+        }
+
+        .dashboard {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background-color: #1a1a1a; /* Preto mais claro */
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            width: 100%; /* Cards ocupam 100% da largura em telas pequenas */
+            margin: 10px 0;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            font-size: 1.2em;
+        }
+
+        /* Cores personalizadas para os cards */
+        #totalVendasCard {
+            background-color: #1e90ff; /* Azul */
+        }
+
+        #vendasWhatsAppCard {
+            background-color: #32cd32; /* Verde */
+        }
+
+        #vendasPresencialCard {
+            background-color: #ffffff; /* Branco */
+            color: #000; /* Texto preto para contraste */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px;
+            background-color: #1a1a1a; /* Preto mais claro */
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #333; /* Linhas mais escuras */
+        }
+
+        th {
+            background-color: #222; /* Fundo escuro para o cabeçalho */
+            color: #fff;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background-color: #333; /* Efeito hover nas linhas */
+        }
+
+        .btn {
+            background-color: #d4af37; /* Dourado */
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #b8860b; /* Dourado mais escuro ao passar o mouse */
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #1a1a1a; /* Preto mais claro */
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1000;
+            width: 90%; /* Modal ocupa 90% da largura em telas pequenas */
+            max-width: 300px; /* Largura máxima */
+            color: #fff; /* Texto branco */
+        }
+
+        .modal input, .modal select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #d4af37; /* Bordas douradas */
+            background-color: #000;
+            color: #fff; /* Texto branco */
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); /* Overlay escuro */
+            z-index: 999;
+        }
+
+        .grafico-container {
+            width: 90%; /* Gráfico ocupa 90% da largura em telas pequenas */
+            margin: 20px auto;
+            background-color: #1a1a1a; /* Preto mais claro */
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        /* Responsividade */
+        @media (min-width: 768px) {
+            .card {
+                width: 30%; /* Cards ocupam 30% da largura em telas maiores */
+            }
+
+            .modal {
+                width: 300px; /* Modal fixo em telas maiores */
+            }
+
+            .grafico-container {
+                width: 80%; /* Gráfico ocupa 80% da largura em telas maiores */
+            }
+        }
+    </style>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Logotipo -->
+    <div class="logo">
+        <img src="logo m4team.png" alt="Logotipo"> <!-- Substitua pelo seu logotipo -->
+    </div>
+
+    <h1>Relatório de Vendas</h1>
+
+    <!-- Dashboard -->
+    <div class="dashboard">
+        <div class="card" id="totalVendasCard">
+            <h2>Total de Vendas</h2>
+            <p id="totalVendas">R$ 0,00</p>
+        </div>
+        <div class="card" id="vendasWhatsAppCard">
+            <h2>Vendas WhatsApp</h2>
+            <p id="vendasWhatsApp">0</p>
+        </div>
+        <div class="card" id="vendasPresencialCard">
+            <h2>Vendas Presenciais</h2>
+            <p id="vendasPresencial">0</p>
+        </div>
+    </div>
+
+    <!-- Botão para adicionar nova venda -->
+    <div style="text-align: center; margin: 20px;">
+        <button class="btn" onclick="abrirModal()">Adicionar Venda</button>
+    </div>
+
+    <!-- Tabela de Vendas -->
+    <table>
+        <thead>
+            <tr>
+                <th>Data da Venda</th>
+                <th>Valor do Produto</th>
+                <th>Local da Venda</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaVendas">
+            <!-- Dados serão inseridos aqui via JavaScript -->
+        </tbody>
+    </table>
+
+    <!-- Gráfico de Vendas -->
+    <div class="grafico-container">
+        <canvas id="graficoVendas"></canvas>
+    </div>
+
+    <!-- Modal para adicionar/editar venda -->
+    <div class="overlay" id="overlay"></div>
+    <div class="modal" id="modal">
+        <h2 id="modalTitulo">Adicionar Venda</h2>
+        <input type="date" id="dataVenda" placeholder="Data da Venda">
+        <input type="number" id="valorVenda" placeholder="Valor do Produto">
+        <select id="localVenda">
+            <option value="WhatsApp">WhatsApp</option>
+            <option value="Presencial">Presencial</option>
+        </select>
+        <button class="btn" onclick="salvarVenda()">Salvar</button>
+        <button class="btn" onclick="fecharModal()">Cancelar</button>
+    </div>
+
+    <script>
+        // Função para salvar dados no LocalStorage
+        function salvarDados() {
+            localStorage.setItem("vendas", JSON.stringify(vendas));
+        }
+
+        // Função para carregar dados do LocalStorage
+        function carregarDados() {
+            const dadosSalvos = localStorage.getItem("vendas");
+            return dadosSalvos ? JSON.parse(dadosSalvos) : [];
+        }
+
+        // Dados iniciais (carregados do LocalStorage)
+        let vendas = carregarDados();
+
+        let vendaEditando = null; // Armazena a venda que está sendo editada
+
+        // Função para calcular o total de vendas
+        function calcularTotalVendas(vendas) {
+            return vendas.reduce((total, venda) => total + venda.valor, 0);
+        }
+
+        // Função para contar vendas por local
+        function contarVendasPorLocal(vendas, local) {
+            return vendas.filter(venda => venda.local === local).length;
+        }
+
+        // Função para atualizar o dashboard
+        function atualizarDashboard() {
+            document.getElementById("totalVendas").textContent = `R$ ${calcularTotalVendas(vendas).toFixed(2)}`;
+            document.getElementById("vendasWhatsApp").textContent = contarVendasPorLocal(vendas, "WhatsApp");
+            document.getElementById("vendasPresencial").textContent = contarVendasPorLocal(vendas, "Presencial");
+            atualizarGrafico(); // Atualiza o gráfico
+        }
+
+        // Função para renderizar a tabela de vendas
+        function renderizarTabela() {
+            const tabelaVendas = document.getElementById("tabelaVendas");
+            tabelaVendas.innerHTML = ""; // Limpa a tabela antes de renderizar
+            vendas.forEach((venda, index) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${venda.data}</td>
+                    <td>R$ ${venda.valor.toFixed(2)}</td>
+                    <td>${venda.local}</td>
+                    <td>
+                        <button class="btn" onclick="editarVenda(${index})">Editar</button>
+                        <button class="btn" onclick="excluirVenda(${index})">Excluir</button>
+                    </td>
+                `;
+                tabelaVendas.appendChild(row);
+            });
+        }
+
+        // Função para abrir o modal (adicionar/editar)
+        function abrirModal(index = null) {
+            const modal = document.getElementById("modal");
+            const overlay = document.getElementById("overlay");
+            if (index !== null) {
+                // Editar venda existente
+                vendaEditando = index;
+                document.getElementById("modalTitulo").textContent = "Editar Venda";
+                document.getElementById("dataVenda").value = vendas[index].data;
+                document.getElementById("valorVenda").value = vendas[index].valor;
+                document.getElementById("localVenda").value = vendas[index].local;
+            } else {
+                // Adicionar nova venda
+                vendaEditando = null;
+                document.getElementById("modalTitulo").textContent = "Adicionar Venda";
+                document.getElementById("dataVenda").value = "";
+                document.getElementById("valorVenda").value = "";
+                document.getElementById("localVenda").value = "WhatsApp";
+            }
+            modal.style.display = "block";
+            overlay.style.display = "block";
+        }
+
+        // Função para fechar o modal
+        function fecharModal() {
+            const modal = document.getElementById("modal");
+            const overlay = document.getElementById("overlay");
+            modal.style.display = "none";
+            overlay.style.display = "none";
+        }
+
+        // Função para salvar venda (adicionar ou editar)
+        function salvarVenda() {
+            const data = document.getElementById("dataVenda").value;
+            const valor = parseFloat(document.getElementById("valorVenda").value);
+            const local = document.getElementById("localVenda").value;
+
+            if (vendaEditando !== null) {
+                // Editar venda existente
+                vendas[vendaEditando] = { data, valor, local };
+            } else {
+                // Adicionar nova venda
+                vendas.push({ data, valor, local });
+            }
+
+            salvarDados(); // Salva os dados no LocalStorage
+            fecharModal();
+            atualizarDashboard();
+            renderizarTabela();
+        }
+
+        // Função para editar venda
+        function editarVenda(index) {
+            abrirModal(index);
+        }
+
+        // Função para excluir venda
+        function excluirVenda(index) {
+            vendas.splice(index, 1);
+            salvarDados(); // Salva os dados no LocalStorage
+            atualizarDashboard();
+            renderizarTabela();
+        }
+
+        // Função para atualizar o gráfico
+        function atualizarGrafico() {
+            const ctx = document.getElementById("graficoVendas").getContext("2d");
+            const vendasWhatsApp = contarVendasPorLocal(vendas, "WhatsApp");
+            const vendasPresencial = contarVendasPorLocal(vendas, "Presencial");
+
+            if (window.grafico) {
+                window.grafico.destroy(); // Destrói o gráfico anterior
+            }
+
+            window.grafico = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: ["WhatsApp", "Presencial"],
+                    datasets: [{
+                        label: "Vendas por Local",
+                        data: [vendasWhatsApp, vendasPresencial],
+                        backgroundColor: ["#32cd32", "#ffffff"], // Cores do gráfico
+                        borderColor: ["#32cd32", "#ffffff"],
+                        borderWidth: 1,
+                    }],
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                        },
+                    },
+                },
+            });
+        }
+
+        // Inicialização
+        atualizarDashboard();
+        renderizarTabela();
+    </script>
+</body>
+</html>
