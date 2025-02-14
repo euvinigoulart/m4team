@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relatório de Vendas</title>
+    <title>CPA - Vendas M4team</title>
     <style>
         /* Reset básico */
         * {
@@ -26,7 +26,7 @@
         }
 
         .logo img {
-            max-width: 300px; /* Tamanho do logotipo */
+            max-width: 150px; /* Tamanho do logotipo */
             height: auto;
         }
 
@@ -35,6 +35,34 @@
             font-size: 2em;
             margin: 10px 0;
             color: #fff; /* Título branco */
+        }
+
+        .filtro-data {
+            text-align: center;
+            margin: 20px;
+        }
+
+        .filtro-data input {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #d4af37; /* Bordas douradas */
+            background-color: #000;
+            color: #fff; /* Texto branco */
+            margin: 0 5px;
+        }
+
+        .filtro-data button {
+            background-color: #d4af37; /* Dourado */
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .filtro-data button:hover {
+            background-color: #b8860b; /* Dourado mais escuro ao passar o mouse */
         }
 
         .dashboard {
@@ -136,7 +164,7 @@
             color: #fff; /* Texto branco */
         }
 
-        .modal input, .modal select {
+        .modal input, .modal select, .modal textarea {
             width: 100%;
             padding: 10px;
             margin: 10px 0;
@@ -191,6 +219,14 @@
 
     <h1>Relatório de Vendas</h1>
 
+    <!-- Filtro por data -->
+    <div class="filtro-data">
+        <input type="date" id="dataInicial">
+        <input type="date" id="dataFinal">
+        <button onclick="filtrarPorData()">Filtrar</button>
+        <button onclick="limparFiltro()">Limpar Filtro</button>
+    </div>
+
     <!-- Dashboard -->
     <div class="dashboard">
         <div class="card" id="totalVendasCard">
@@ -217,6 +253,7 @@
         <thead>
             <tr>
                 <th>Data da Venda</th>
+                <th>Descrição do Produto</th>
                 <th>Valor do Produto</th>
                 <th>Local da Venda</th>
                 <th>Ações</th>
@@ -237,6 +274,7 @@
     <div class="modal" id="modal">
         <h2 id="modalTitulo">Adicionar Venda</h2>
         <input type="date" id="dataVenda" placeholder="Data da Venda">
+        <textarea id="descricaoProduto" placeholder="Descrição do Produto"></textarea>
         <input type="number" id="valorVenda" placeholder="Valor do Produto">
         <select id="localVenda">
             <option value="WhatsApp">WhatsApp</option>
@@ -273,22 +311,32 @@
             return vendas.filter(venda => venda.local === local).length;
         }
 
+        // Função para filtrar vendas por data
+        function filtrarVendasPorData(dataInicial, dataFinal) {
+            return vendas.filter(venda => {
+                const dataVenda = new Date(venda.data);
+                return (!dataInicial || dataVenda >= new Date(dataInicial)) &&
+                       (!dataFinal || dataVenda <= new Date(dataFinal));
+            });
+        }
+
         // Função para atualizar o dashboard
-        function atualizarDashboard() {
-            document.getElementById("totalVendas").textContent = `R$ ${calcularTotalVendas(vendas).toFixed(2)}`;
-            document.getElementById("vendasWhatsApp").textContent = contarVendasPorLocal(vendas, "WhatsApp");
-            document.getElementById("vendasPresencial").textContent = contarVendasPorLocal(vendas, "Presencial");
-            atualizarGrafico(); // Atualiza o gráfico
+        function atualizarDashboard(vendasFiltradas = vendas) {
+            document.getElementById("totalVendas").textContent = `R$ ${calcularTotalVendas(vendasFiltradas).toFixed(2)}`;
+            document.getElementById("vendasWhatsApp").textContent = contarVendasPorLocal(vendasFiltradas, "WhatsApp");
+            document.getElementById("vendasPresencial").textContent = contarVendasPorLocal(vendasFiltradas, "Presencial");
+            atualizarGrafico(vendasFiltradas); // Atualiza o gráfico
         }
 
         // Função para renderizar a tabela de vendas
-        function renderizarTabela() {
+        function renderizarTabela(vendasFiltradas = vendas) {
             const tabelaVendas = document.getElementById("tabelaVendas");
             tabelaVendas.innerHTML = ""; // Limpa a tabela antes de renderizar
-            vendas.forEach((venda, index) => {
+            vendasFiltradas.forEach((venda, index) => {
                 const row = document.createElement("tr");
                 row.innerHTML = `
                     <td>${venda.data}</td>
+                    <td>${venda.descricao}</td>
                     <td>R$ ${venda.valor.toFixed(2)}</td>
                     <td>${venda.local}</td>
                     <td>
@@ -300,6 +348,23 @@
             });
         }
 
+        // Função para filtrar por data
+        function filtrarPorData() {
+            const dataInicial = document.getElementById("dataInicial").value;
+            const dataFinal = document.getElementById("dataFinal").value;
+            const vendasFiltradas = filtrarVendasPorData(dataInicial, dataFinal);
+            atualizarDashboard(vendasFiltradas);
+            renderizarTabela(vendasFiltradas);
+        }
+
+        // Função para limpar o filtro
+        function limparFiltro() {
+            document.getElementById("dataInicial").value = "";
+            document.getElementById("dataFinal").value = "";
+            atualizarDashboard(vendas);
+            renderizarTabela(vendas);
+        }
+
         // Função para abrir o modal (adicionar/editar)
         function abrirModal(index = null) {
             const modal = document.getElementById("modal");
@@ -309,6 +374,7 @@
                 vendaEditando = index;
                 document.getElementById("modalTitulo").textContent = "Editar Venda";
                 document.getElementById("dataVenda").value = vendas[index].data;
+                document.getElementById("descricaoProduto").value = vendas[index].descricao;
                 document.getElementById("valorVenda").value = vendas[index].valor;
                 document.getElementById("localVenda").value = vendas[index].local;
             } else {
@@ -316,6 +382,7 @@
                 vendaEditando = null;
                 document.getElementById("modalTitulo").textContent = "Adicionar Venda";
                 document.getElementById("dataVenda").value = "";
+                document.getElementById("descricaoProduto").value = "";
                 document.getElementById("valorVenda").value = "";
                 document.getElementById("localVenda").value = "WhatsApp";
             }
@@ -334,15 +401,16 @@
         // Função para salvar venda (adicionar ou editar)
         function salvarVenda() {
             const data = document.getElementById("dataVenda").value;
+            const descricao = document.getElementById("descricaoProduto").value;
             const valor = parseFloat(document.getElementById("valorVenda").value);
             const local = document.getElementById("localVenda").value;
 
             if (vendaEditando !== null) {
                 // Editar venda existente
-                vendas[vendaEditando] = { data, valor, local };
+                vendas[vendaEditando] = { data, descricao, valor, local };
             } else {
                 // Adicionar nova venda
-                vendas.push({ data, valor, local });
+                vendas.push({ data, descricao, valor, local });
             }
 
             salvarDados(); // Salva os dados no LocalStorage
@@ -365,10 +433,10 @@
         }
 
         // Função para atualizar o gráfico
-        function atualizarGrafico() {
+        function atualizarGrafico(vendasFiltradas = vendas) {
             const ctx = document.getElementById("graficoVendas").getContext("2d");
-            const vendasWhatsApp = contarVendasPorLocal(vendas, "WhatsApp");
-            const vendasPresencial = contarVendasPorLocal(vendas, "Presencial");
+            const vendasWhatsApp = contarVendasPorLocal(vendasFiltradas, "WhatsApp");
+            const vendasPresencial = contarVendasPorLocal(vendasFiltradas, "Presencial");
 
             if (window.grafico) {
                 window.grafico.destroy(); // Destrói o gráfico anterior
